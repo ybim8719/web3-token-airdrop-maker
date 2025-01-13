@@ -1,10 +1,15 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity 0.8.28;
 
 import {Script, console} from "forge-std/Script.sol";
 import {DevOpsTools} from "foundry-devops/src/DevOpsTools.sol";
 import {MerkleAirdrop} from "../src/MerkleAirDrop.sol";
 
+/**
+ * Original Work by:
+ * @author Ciara Nightingale
+ * @author Cyfrin
+ */
 contract ClaimAirdrop is Script {
     address public CLAIMING_ADDRESS = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     uint256 public AMOUNT_TO_COLLECT = 25 * 1e18;
