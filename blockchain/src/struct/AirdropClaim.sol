@@ -8,6 +8,5 @@ struct AirdropClaim {
 
 struct MerkleTree {
     AirdropClaim[] claims;
-    string tree;
     bool deployed;
 }

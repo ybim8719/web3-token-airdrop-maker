@@ -13,16 +13,41 @@ import {AirdropClaim, MerkleTree} from "./struct/AirdropClaim.sol";
  */
 contract MerkleTreeGenerator {
     /*//////////////////////////////////////////////////////////////
+                            ERRORS
+    //////////////////////////////////////////////////////////////*/
+    error noDataProvided();
+
+    /*//////////////////////////////////////////////////////////////
+                            EVENTS
+    //////////////////////////////////////////////////////////////*/
+    // tree achieved and root sent
+
+    /*//////////////////////////////////////////////////////////////
                             STATES
     //////////////////////////////////////////////////////////////*/
     MerkleTree[] s_feed;
     IERC20 i_token;
+    uint256 currentTreeIndex;
 
     constructor(IERC20 token) {
         i_token = token;
+        currentTreeIndex = 0;
+        AirdropClaim[] memory claims;
+        MerkleTree memory merkleTree = MerkleTree({claims: claims, deployed: false});
+        s_feed[currentTreeIndex] = merkleTree;
     }
 
+    /*//////////////////////////////////////////////////////////////
+                            FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
     function addAccountAndAddress(address target, uint256 amount) public {
         //is there any checks to do an addresses and amount ?
     }
+
+    function CalculateRootAndSendToAirdrop() public {}
+
+    /*//////////////////////////////////////////////////////////////
+                            GETTERS
+    //////////////////////////////////////////////////////////////*/
+    function isMerkleTreeAchieved() public returns (bool) {}
 }
