@@ -7,3 +7,6 @@
 [submodule "blockchain/lib/foundry-devops"]
 	path = blockchain/lib/foundry-devops
 	url = https://github.com/Cyfrin/foundry-devops
+[submodule "blockchain/lib/murky"]
+	path = blockchain/lib/murky
+	url = https://github.com/dmfxyz/murky
