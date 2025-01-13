@@ -3,12 +3,12 @@ pragma solidity 0.8.20;
 
 import {Test, console} from "forge-std/Test.sol";
 import {MerkleAirdrop} from "../src/MerkleAirDrop.sol";
-import {BagelToken} from "../src/BagelToken.sol";
+import {DurianDurianToken} from "../src/DurianDurianToken.sol";
 import {ZkSyncChainChecker} from "foundry-devops/src/ZkSyncChainChecker.sol";
 import {DeployMerkleAirdrop} from "../script/DeployMerkleAirdrop.s.sol";
 
 contract MerkleAirdropTest is Test, ZkSyncChainChecker {
-    BagelToken public token;
+    DurianDurianToken public token;
     MerkleAirdrop public airdrop;
 
     bytes32 ROOT = 0xaa5d581231e596618465a56aa0f5870ba6e20785fe436d5bfb82b08662ccc7c4;
@@ -27,7 +27,7 @@ contract MerkleAirdropTest is Test, ZkSyncChainChecker {
             DeployMerkleAirdrop deployer = new DeployMerkleAirdrop();
             (airdrop, token) = deployer.deployMerkleAirdrop();
         } else {
-            token = new BagelToken();
+            token = new DurianDurianToken();
             airdrop = new MerkleAirdrop(ROOT, token);
             token.mint(token.owner(), amountToSend);
             token.transfer(address(airdrop), amountToSend);

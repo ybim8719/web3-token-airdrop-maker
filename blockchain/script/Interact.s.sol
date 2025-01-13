@@ -20,7 +20,7 @@ contract ClaimAirdrop is Script {
 
     // STEP 1: launch DeployMerkleAirdrop with anvil OPEN
     // Account 1 of anvil is allowed to claim the 25 * 10e18 ETH (because written in merkle leaf and proof and so on)
-    // Deployment of DeployMerkleAirdrop will deploy BagelToken MerkleAirdrop contracts. Merkle root is passed to airdrop so it can ensure who is approved to claim
+    // Deployment of DeployMerkleAirdrop will deploy DurianDurian MerkleAirdrop contracts. Merkle root is passed to airdrop so it can ensure who is approved to claim
     // using make deploy
 
     // STEP 2
@@ -45,7 +45,7 @@ contract ClaimAirdrop is Script {
 
     // STEP 5
     // check if anvil account1 has received the money
-    // cast call <bageltoken-address-deployed-on-anvil> "balanceOf(address)" <address-of-anvil-account1>
+    // cast call <token-address-deployed-on-anvil> "balanceOf(address)" <address-of-anvil-account1>
     // gives 0x0000000000000000000000000000000000000000000000015af1d78b58c40000
     // convert : cast --to-dec 0x000000000000000000000000000000000000000000000015af1d78b58c40000
     // equals 25000000000000000000
