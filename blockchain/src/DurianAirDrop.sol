@@ -26,9 +26,8 @@ contract DurianAirDrop is EIP712 {
     /*//////////////////////////////////////////////////////////////
                             STATES
     //////////////////////////////////////////////////////////////*/
-    bytes32[] private s_merkleRoots;
     IERC20 private immutable i_airdropToken;
-
+    bytes32[] private s_merkleRoots;
     mapping(address claimer => bool hasClaimed)[] private s_hasClaimedByRoot;
 
     constructor(IERC20 airdropToken) EIP712("Airdrop", "1") {
@@ -40,9 +39,15 @@ contract DurianAirDrop is EIP712 {
     //////////////////////////////////////////////////////////////*/
     function addMerkleTree(bytes32 merkleRoot) public {}
 
-    function claim(address account, uint256 amount, bytes32[] calldata merkleProof, uint8 v, bytes32 r, bytes32 s)
-        external
-    {
+    function claim(
+        uint256 id,
+        address account,
+        uint256 amount,
+        bytes32[] calldata merkleProof,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
         // if (s_hasClaimed[account]) {
         //     revert MerkleAirdrop__AlreadyClaimed();
         // }

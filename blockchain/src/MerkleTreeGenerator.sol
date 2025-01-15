@@ -17,20 +17,23 @@ contract MerkleTreeGenerator is Ownable {
     /*//////////////////////////////////////////////////////////////
                             ERRORS
     //////////////////////////////////////////////////////////////*/
-    error noDataProvided();
+    error MerkleTreeGenerator__NoDataProvided();
+    error MerkleTreeGenerator__RecipientAlreadyAdded(address recipient);
+    error MerkleTreeGenerator__AmountCantBeZero(address recipient);
 
     /*//////////////////////////////////////////////////////////////
                             EVENTS
     //////////////////////////////////////////////////////////////*/
-    // tree achieved and root sent
+    event MerkleRootSent(uint256 id);
+    event RecipientAdded(uint256 amount, address recipient);
 
     /*//////////////////////////////////////////////////////////////
                             STATES
     //////////////////////////////////////////////////////////////*/
+    uint256 s_currentTreeCounter;
     mapping(uint256 index => MerkleTree) s_feed;
     IERC20 i_token;
     DurianAirDrop i_airdrop;
-    uint256 s_currentTreeCounter;
 
     constructor(IERC20 token, DurianAirDrop airdrop) Ownable(msg.sender) {
         i_token = token;
@@ -41,23 +44,29 @@ contract MerkleTreeGenerator is Ownable {
     /*//////////////////////////////////////////////////////////////
                             FUNCTIONS
     //////////////////////////////////////////////////////////////*/
-    function addAccountAndAddress(address recipient, uint256 amount) public {
+    function addAccountAndAddress(address recipient, uint256 amount) public onlyOwner {
         if (amount == 0) {
-            // revert
+            revert MerkleTreeGenerator__AmountCantBeZero(recipient);
         }
-        // does account already exist ?
-        // if yes, revert
+        // account already added ?
         if (isRecipentAlreadyRegistered(s_currentTreeCounter, recipient)) {
-            // revert
+            revert MerkleTreeGenerator__RecipientAlreadyAdded(recipient);
         }
         // add claim to existing MerkleTreeAirdropClaim
         s_feed[s_currentTreeCounter].claims.push(AirDropClaim(recipient, amount));
         s_feed[s_currentTreeCounter].nbOfClaims++;
         s_feed[s_currentTreeCounter].totalAmountToSend += amount;
         s_feed[s_currentTreeCounter].recipients[recipient] = true;
+        emit RecipientAdded(amount, recipient);
     }
 
-    function CalculateRootAndSendToAirdrop() public {}
+    function closeTreeAndSendRoot() public {
+        // id exists ?
+        // has claims ?
+
+        // loop on claims and build root +
+        // s_token.transfer(address(airdrop), amountToSend);
+    }
 
     /*//////////////////////////////////////////////////////////////
                             GETTERS

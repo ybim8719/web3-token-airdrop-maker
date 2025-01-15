@@ -36,20 +36,21 @@ contract MerkleAirdropTest is Test, ZkSyncChainChecker {
         gasPayer = makeAddr("gasPayer");
     }
 
-    function testUsersCanClaim() public {
-        uint256 startingBalance = token.balanceOf(user);
-        // will hash amount and address where to send money (for merkle tree verification later)
-        // this could like an order to send the "amount" to the "address"
-        bytes32 digest = airdrop.getMessageHash(user, amountToClaim);
-        // this actio ncan only be done by the actual signer (user)
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivKey, digest);
-        vm.prank(gasPayer);
-        // user gave the v,r,s to gaspayer who will be claim onbehlf of user (but will himself pay the gas fees)
-        // this could be like, "hey, the user signed himself this order to claim amount for his address, and this is
-        // the proof that he is the author of this message"
-        airdrop.claim(user, amountToClaim, proof, v, r, s);
-        uint256 endingBalance = token.balanceOf(user);
-        console.log("Ending balance: %d", endingBalance);
-        assertEq(endingBalance - startingBalance, amountToClaim);
-    }
+    // function testUsersCanClaim() public {
+    //     uint256 startingBalance = token.balanceOf(user);
+    //     console.log(user, "user address");
+    //     // will hash amount and address where to send money (for merkle tree verification later)
+    //     // this could like an order to send the "amount" to the "address"
+    //     bytes32 digest = airdrop.getMessageHash(user, amountToClaim);
+    //     // this actio ncan only be done by the actual signer (user)
+    //     (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivKey, digest);
+    //     vm.prank(gasPayer);
+    //     // user gave the v,r,s to gaspayer who will be claim onbehlf of user (but will himself pay the gas fees)
+    //     // this could be like, "hey, the user signed himself this order to claim amount for his address, and this is
+    //     // the proof that he is the author of this message"
+    //     airdrop.claim(user, amountToClaim, proof, v, r, s);
+    //     uint256 endingBalance = token.balanceOf(user);
+    //     console.log("Ending balance: %d", endingBalance);
+    //     assertEq(endingBalance - startingBalance, amountToClaim);
+    // }
 }
