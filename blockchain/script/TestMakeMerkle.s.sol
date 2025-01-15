@@ -31,23 +31,25 @@ contract TestMakeMerkle is Script, ScriptHelper {
 
     /// @dev Read the input file and generate the Merkle proof, then write the output file
     function run() public {
-        AirDropClaim[](4) truc;
-        truc.push(AirDropClaim(ACCOUNT1, AMOUNT1));
-        truc.push(AirDropClaim(ACCOUNT2, AMOUNT2));
-        truc.push(AirDropClaim(ACCOUNT3, AMOUNT3));
-        truc.push(AirDropClaim(ACCOUNT4, AMOUNT4));
+        AirDropClaim[] memory truc = new AirDropClaim[](4);
+        truc[0] = AirDropClaim(ACCOUNT1, AMOUNT1);
+        truc[1] = AirDropClaim(ACCOUNT2, AMOUNT2);
+        truc[2] = AirDropClaim(ACCOUNT3, AMOUNT3);
+        truc[3] = AirDropClaim(ACCOUNT4, AMOUNT4);
 
         console.log("Generating Merkle Proof");
 
         for (uint256 i = 0; i < truc.length; ++i) {
-            bytes32[] memory data = new bytes32[](truc.length); // actual data as a bytes32
+            bytes32[] memory data = new bytes32[](2); // actual data as a bytes32
 
-            for (uint256 j = 0; j < 2; ++j) {
-                address recipient = truc[j].recipient;
-                data.push(bytes32(uint256(uint160(recipient))));
-                uint256 amount = truc[j].amount;
-                data.push(bytes32(amount));
-            }
+            address recipient = truc[i].recipient;
+            console.log(recipient, "recipient");
+            data[0] = bytes32(uint256(uint160(recipient)));
+            uint256 amount = truc[i].amount;
+            console.log(amount, "amount");
+            data[1] = bytes32(amount);
+
+            console.log(bytes32ArrayToString(data), "data before leaf");
 
             // Create the hash for the merkle tree leaf node
             // abi encode the data array (each element is a bytes32 representation for the address and the amount)
@@ -60,14 +62,17 @@ contract TestMakeMerkle is Script, ScriptHelper {
             leafs[i] = keccak256(bytes.concat(keccak256(ltrim64(abi.encode(data)))));
         }
 
+        console.log(bytes32ArrayToString(leafs), "final leaves");
+
         string memory root = vm.toString(m.getRoot(leafs));
+        console.log(root, "root");
 
         for (uint256 i = 0; i < truc.length; ++i) {
+            console.log(i);
             // get proof gets the nodes needed for the proof & strigify (from helper lib)
-            string memory proof = bytes32ArrayToString(m.getProof(leafs, i));
-            // get the specific leaf working on
-
-            // generate the Json output file (tree dump)
+            bytes32[] memory proof = m.getProof(leafs, i);
+            console.log(bytes32ArrayToString(proof));
+            // TODO proof must be stored in the state of generator.
         }
 
         console.log("DONE: The output is found at %s");
