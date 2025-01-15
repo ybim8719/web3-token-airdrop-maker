@@ -6,6 +6,12 @@ struct AirDropClaim {
     uint256 amount;
 }
 
+struct FullAirDropClaim {
+    address recipient;
+    uint256 amount;
+    bytes32[] proof;
+}
+
 struct Proof {
     bytes32[2] data;
 }

@@ -5,6 +5,7 @@ import {Test, console} from "forge-std/Test.sol";
 import {DurianAirDrop} from "../src/DurianAirDrop.sol";
 import {DurianDurianToken} from "../src/DurianDurianToken.sol";
 import {MerkleTreeGenerator} from "../src/MerkleTreeGenerator.sol";
+import {FullAirDropClaim} from "../src/struct/AirdropClaim.sol";
 
 import {ZkSyncChainChecker} from "foundry-devops/src/ZkSyncChainChecker.sol";
 import {DeployApp} from "../script/DeployApp.s.sol";
@@ -24,7 +25,10 @@ contract MerkleAirdropTest is Test, ZkSyncChainChecker {
     address public constant ACCOUNT2 = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
     address public constant ACCOUNT3 = 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC;
     address public constant ACCOUNT4 = 0x90F79bf6EB2c4f870365E785982E1f101E93b906;
-    address public constant ACCOUNT5 = 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65;
+    uint256 public constant AMOUNT1 = 100 * 1e18;
+    uint256 public constant AMOUNT2 = 300 * 1e18;
+    uint256 public constant AMOUNT3 = 500 * 1e18;
+    uint256 public constant AMOUNT4 = 700 * 1e18;
 
     // bytes32 ROOT = 0xaa5d581231e596618465a56aa0f5870ba6e20785fe436d5bfb82b08662ccc7c4;
     // bytes32 proofOne = 0x0fd7c981d39bece61f7499702bf59b3114a90e66b51ba2c53abdf7b62986c00a;
@@ -48,12 +52,13 @@ contract MerkleAirdropTest is Test, ZkSyncChainChecker {
     function testAddSeveralClaims() public {
         vm.assertEq(s_generator.getNbOfClaimsByTree(s_generator.getCurrentTreeCounter()), 0);
         vm.startPrank(msg.sender);
-        s_generator.addAccountAndAddress(ACCOUNT1, 10);
-        s_generator.addAccountAndAddress(ACCOUNT2, 20);
+        s_generator.addAccountAndAddress(ACCOUNT1, AMOUNT1);
+        s_generator.addAccountAndAddress(ACCOUNT2, AMOUNT2);
         vm.stopPrank();
         vm.assertEq(s_generator.getNbOfClaimsByTree(s_generator.getCurrentTreeCounter()), 2);
         vm.assertEq(s_generator.getNumberOfProofs(s_generator.getCurrentTreeCounter()), 0);
         vm.assertEq(s_generator.isMerkleTreeSent(s_generator.getCurrentTreeCounter()), false);
+        vm.assertEq(s_generator.getTotalAmountByTree(s_generator.getCurrentTreeCounter()), AMOUNT1 + AMOUNT2);
     }
 
     function testAddClaimFailsIfSameRecipient() public {
