@@ -5,9 +5,8 @@ import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeE
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {AirdropClaim} from "./struct/AirdropClaim.sol";
 
-contract DurianAirdrop is EIP712 {
+contract DurianAirDrop is EIP712 {
     using SafeERC20 for IERC20;
 
     bytes32 private constant MESSAGE_TYPEHASH = keccak256("AirdropClaim(address account,uint256 amount)");
@@ -27,11 +26,10 @@ contract DurianAirdrop is EIP712 {
     /*//////////////////////////////////////////////////////////////
                             STATES
     //////////////////////////////////////////////////////////////*/
-
     bytes32[] private s_merkleRoots;
     IERC20 private immutable i_airdropToken;
 
-    mapping(address claimer => bool hasClaimed)[] private s_hasClaimedPerRoot;
+    mapping(address claimer => bool hasClaimed)[] private s_hasClaimedByRoot;
 
     constructor(IERC20 airdropToken) EIP712("Airdrop", "1") {
         i_airdropToken = airdropToken;
@@ -40,7 +38,6 @@ contract DurianAirdrop is EIP712 {
     /*//////////////////////////////////////////////////////////////
                             FUNCTIONS STATES
     //////////////////////////////////////////////////////////////*/
-
     function addMerkleTree(bytes32 merkleRoot) public {}
 
     function claim(address account, uint256 amount, bytes32[] calldata merkleProof, uint8 v, bytes32 r, bytes32 s)
