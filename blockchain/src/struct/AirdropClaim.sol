@@ -18,9 +18,9 @@ struct AirDropClaim {
 
 struct MerkleTree {
     AirDropClaim[] claims;
-    bool deployed;
+    bool sendToAirdrop;
     uint256 nbOfClaims;
     uint256 totalAmountToSend;
-    Proof[] proofs;
+    bytes32[][] proofs;
     mapping(address recipient => bool isRegistered) recipients;
 }

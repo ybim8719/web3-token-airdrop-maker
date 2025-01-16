@@ -3,8 +3,8 @@
 pragma solidity 0.8.28;
 
 import {Script, console} from "forge-std/Script.sol";
-import {MerkleAirdrop} from "../src/MerkleAirDrop.sol";
-import {DurianDurianToken} from "../src/DurianDurianToken.sol";
+import {MerkleAirdrop} from "../../src/old/MerkleAirDrop.sol";
+import {DurianDurianToken} from "../../src/DurianDurianToken.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract DeployMerkleAirdrop is Script {

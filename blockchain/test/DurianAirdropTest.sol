@@ -4,19 +4,21 @@ pragma solidity 0.8.28;
 import {Test, console} from "forge-std/Test.sol";
 import {DurianAirDrop} from "../src/DurianAirDrop.sol";
 import {DurianDurianToken} from "../src/DurianDurianToken.sol";
-import {MerkleTreeGenerator} from "../src/MerkleTreeGenerator.sol";
+import {MerkleTreeBuilder} from "../src/MerkleTreeBuilder.sol";
 import {FullAirDropClaim} from "../src/struct/AirdropClaim.sol";
 
 import {ZkSyncChainChecker} from "foundry-devops/src/ZkSyncChainChecker.sol";
 import {DeployApp} from "../script/DeployApp.s.sol";
+import {ScriptHelper} from "murky/script/common/ScriptHelper.sol";
 
-contract MerkleAirdropTest is Test, ZkSyncChainChecker {
+contract MerkleAirdropTest is Test, ZkSyncChainChecker, ScriptHelper {
     /*//////////////////////////////////////////////////////////////
                             ERRORS
     //////////////////////////////////////////////////////////////*/
     DurianDurianToken public s_token;
     DurianAirDrop public s_airdrop;
-    MerkleTreeGenerator public s_generator;
+    MerkleTreeBuilder public s_treeBuilder;
+
     /*//////////////////////////////////////////////////////////////
                             MOCK CONSTANTS
     //////////////////////////////////////////////////////////////*/
@@ -29,78 +31,83 @@ contract MerkleAirdropTest is Test, ZkSyncChainChecker {
     uint256 public constant AMOUNT2 = 300 * 1e18;
     uint256 public constant AMOUNT3 = 500 * 1e18;
     uint256 public constant AMOUNT4 = 700 * 1e18;
+    bytes32 public constant ROOT = 0xcd4f4f30e5f9c3c99653cade33a38a0aeba43de7d3dbd5c16001e52c35ea8ff0;
+    bytes32 public constant PARTIAL_PROOF1 = 0xe151be5479ef624d6dc5498cb022ec808d8e3050a6d7da9ea1eaf67eeecde24d;
+    bytes32 public constant PARTIAL_PROOF2 = 0x790e48c02645fb7bbef96b522c95e3a425b4cfbacf621dbf1bb29697c128bdd9;
+    bytes32[] PROOF1 = [PARTIAL_PROOF1, PARTIAL_PROOF2];
 
-    // bytes32 ROOT = 0xaa5d581231e596618465a56aa0f5870ba6e20785fe436d5bfb82b08662ccc7c4;
-    // bytes32 proofOne = 0x0fd7c981d39bece61f7499702bf59b3114a90e66b51ba2c53abdf7b62986c00a;
-    // bytes32 proofTwo = 0xe5ebd1e1b5a5478a944ecab36a9a954ac3b6b8216875f6524caa7a1d87096576;
-    // bytes32[] proof = [proofOne, proofTwo];
-    // uint256 amountToClaim = 25 * 1e18;
-    // uint256 amountToSend = 4 * amountToClaim;
-    // address user;
     // uint256 userPrivKey;
     // address public gasPayer;
 
     function setUp() public {
         DeployApp script = new DeployApp();
-        (s_generator, s_airdrop, s_token) = script.run();
+        (s_treeBuilder, s_airdrop, s_token) = script.run();
         vm.startPrank(msg.sender);
         s_token.mint(s_token.owner(), INITIAL_MINTING_AMOUNT);
-        s_token.approve(address(s_generator), INITIAL_MINTING_AMOUNT);
+        s_token.approve(address(s_treeBuilder), INITIAL_MINTING_AMOUNT);
         vm.stopPrank();
     }
 
-    modifier treeReadyForDeployment() {
+    modifier treeReadyForFinalizing() {
         vm.startPrank(msg.sender);
-        s_generator.addAccountAndAddress(ACCOUNT1, AMOUNT1);
-        s_generator.addAccountAndAddress(ACCOUNT2, AMOUNT2);
+        s_treeBuilder.addAccountAndAddress(ACCOUNT1, AMOUNT1);
+        s_treeBuilder.addAccountAndAddress(ACCOUNT2, AMOUNT2);
+        s_treeBuilder.addAccountAndAddress(ACCOUNT3, AMOUNT3);
+        s_treeBuilder.addAccountAndAddress(ACCOUNT4, AMOUNT4);
         vm.stopPrank();
         _;
     }
 
     function testAddSeveralClaims() public {
-        vm.assertEq(s_generator.getNbOfClaimsByTree(s_generator.getCurrentTreeCounter()), 0);
+        vm.assertEq(s_treeBuilder.getNbOfClaimsByTree(s_treeBuilder.getCurrentTreeId()), 0);
         vm.startPrank(msg.sender);
-        s_generator.addAccountAndAddress(ACCOUNT1, AMOUNT1);
-        s_generator.addAccountAndAddress(ACCOUNT2, AMOUNT2);
+        s_treeBuilder.addAccountAndAddress(ACCOUNT1, AMOUNT1);
+        s_treeBuilder.addAccountAndAddress(ACCOUNT2, AMOUNT2);
         vm.stopPrank();
-        vm.assertEq(s_generator.getNbOfClaimsByTree(s_generator.getCurrentTreeCounter()), 2);
-        vm.assertEq(s_generator.getNumberOfProofs(s_generator.getCurrentTreeCounter()), 0);
-        vm.assertEq(s_generator.isMerkleTreeSent(s_generator.getCurrentTreeCounter()), false);
-        vm.assertEq(s_generator.getTotalAmountByTree(s_generator.getCurrentTreeCounter()), AMOUNT1 + AMOUNT2);
+        vm.assertEq(s_treeBuilder.getNbOfClaimsByTree(s_treeBuilder.getCurrentTreeId()), 2);
+        vm.assertEq(s_treeBuilder.getNumberOfProofs(s_treeBuilder.getCurrentTreeId()), 0);
+        vm.assertEq(s_treeBuilder.isMerkleTreeSent(s_treeBuilder.getCurrentTreeId()), false);
+        vm.assertEq(s_treeBuilder.getTotalAmountByTree(s_treeBuilder.getCurrentTreeId()), AMOUNT1 + AMOUNT2);
     }
 
     function testAddClaimFailsIfSameRecipient() public {
         vm.startPrank(msg.sender);
-        s_generator.addAccountAndAddress(ACCOUNT1, 10);
+        s_treeBuilder.addAccountAndAddress(ACCOUNT1, 10);
         vm.expectRevert();
-        s_generator.addAccountAndAddress(ACCOUNT1, 20);
+        s_treeBuilder.addAccountAndAddress(ACCOUNT1, 20);
         vm.stopPrank();
     }
 
     function testAddClaimFailsIfNotOwner() public {
         vm.expectRevert();
-        s_generator.addAccountAndAddress(ACCOUNT1, 20);
+        s_treeBuilder.addAccountAndAddress(ACCOUNT1, 20);
     }
 
     function testAddClaimFailsIfAmountIsZero() public {
         vm.startPrank(msg.sender);
         vm.expectRevert();
-        s_generator.addAccountAndAddress(ACCOUNT1, 0);
+        s_treeBuilder.addAccountAndAddress(ACCOUNT1, 0);
         vm.stopPrank();
     }
 
-    function testEndTree() public treeReadyForDeployment {
-        vm.startPrank(msg.sender);
-        s_generator.closeCurrentTreeAndSendRoot();
-        vm.stopPrank();
-        console.log(s_generator.getNumberOfProofs(1));
-        console.log(s_generator.getNbOfClaimsByTree(1));
-    }
+    function testFinalizeTreeWorks() public treeReadyForFinalizing {
+        uint256 initialOwnerBalance = s_token.balanceOf(s_token.owner());
+        vm.prank(msg.sender);
+        s_treeBuilder.finalizeTree();
 
-    // vm.prank(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266);
-    // console.log(s_generator.getCurrentTreeCounter());
-    // console.log(s_generator.isMerkleTreeSent(0));
-    // console.log(s_generator.getNumberOfProofs(0));
+        uint256 previousId = s_treeBuilder.getCurrentTreeId() - 1;
+        // amount of claims transfered from owner to airdrop
+        assertEq(initialOwnerBalance, s_token.balanceOf(s_token.owner()) + s_token.balanceOf(address(s_airdrop)));
+        // 4 claims gives 4 proofs
+        assertEq(s_treeBuilder.getNumberOfProofs(previousId), 4);
+        assertEq(s_treeBuilder.getNbOfClaimsByTree(previousId), 4);
+        // tree is locked
+        assertEq(s_treeBuilder.isMerkleTreeSent(previousId), true);
+        // tests root and proofs
+        assertEq(s_airdrop.getMerkleRootsLength(), 1);
+        assertEq(s_treeBuilder.getProof(previousId, 0), PROOF1);
+        assertEq(s_airdrop.getMerkleRoot(0), ROOT);
+    }
 
     // function testUsersCanClaim() public {
     //     // uint256 startingBalance = token.balanceOf(user);

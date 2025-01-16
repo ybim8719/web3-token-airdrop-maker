@@ -3,7 +3,7 @@ pragma solidity 0.8.28;
 
 import {Script, console} from "forge-std/Script.sol";
 import {DevOpsTools} from "foundry-devops/src/DevOpsTools.sol";
-import {MerkleAirdrop} from "../src/MerkleAirDrop.sol";
+import {MerkleAirdrop} from "../../src/old/MerkleAirDrop.sol";
 
 /**
  * Original Work by:

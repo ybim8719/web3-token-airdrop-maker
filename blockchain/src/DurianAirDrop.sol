@@ -39,7 +39,7 @@ contract DurianAirDrop is EIP712 {
     /*//////////////////////////////////////////////////////////////
                             FUNCTIONS STATES
     //////////////////////////////////////////////////////////////*/
-    function addMerkleTree(bytes32 merkleRoot) public {
+    function addMerkleRoot(bytes32 merkleRoot) public {
         s_merkleRoots.push(merkleRoot);
     }
 
@@ -89,10 +89,6 @@ contract DurianAirDrop is EIP712 {
 
     function getMerkleRootsLength() public view returns (uint256) {
         return s_merkleRoots.length;
-    }
-
-    function getAirdropToken() public view returns (IERC20) {
-        return i_airdropToken;
     }
 
     /*//////////////////////////////////////////////////////////////

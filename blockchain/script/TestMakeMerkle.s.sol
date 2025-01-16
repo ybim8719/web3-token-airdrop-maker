@@ -3,7 +3,6 @@ pragma solidity 0.8.28;
 
 import {Script, console} from "forge-std/Script.sol";
 import {stdJson} from "forge-std/StdJson.sol";
-// import {console} from "forge-std/console.sol";
 import {Merkle} from "murky/src/Merkle.sol";
 import {ScriptHelper} from "murky/script/common/ScriptHelper.sol";
 import {AirDropClaim} from "../src/struct/AirdropClaim.sol";
@@ -40,41 +39,21 @@ contract TestMakeMerkle is Script, ScriptHelper {
         truc[2] = AirDropClaim(ACCOUNT3, AMOUNT3);
         truc[3] = AirDropClaim(ACCOUNT4, AMOUNT4);
 
-        console.log("Generating Merkle Proof");
-
         for (uint256 i = 0; i < truc.length; ++i) {
             bytes32[] memory data = new bytes32[](2); // actual data as a bytes32
             address recipient = truc[i].recipient;
-            console.log(recipient, "recipient");
             data[0] = bytes32(uint256(uint160(recipient)));
             uint256 amount = truc[i].amount;
-            console.log(amount, "amount");
             data[1] = bytes32(amount);
-
-            console.log(bytes32ArrayToString(data), "data before leaf");
-
-            // Create the hash for the merkle tree leaf node
-            // abi encode the data array (each element is a bytes32 representation for the address and the amount)
-            // Helper from Murky (ltrim64) Returns the bytes with the first 64 bytes removed
-            // ltrim64 removes the offset and length from the encoded bytes. There is an offset because the array
-            // is declared in memory
-            // hash the encoded address and amount
-            // bytes.concat turns from bytes32 to bytes
-            // hash again because preimage attack
             leafs[i] = keccak256(bytes.concat(keccak256(ltrim64(abi.encode(data)))));
         }
 
         console.log(bytes32ArrayToString(leafs), "final leaves");
-
-        string memory root = vm.toString(m.getRoot(leafs));
-        console.log(root, "root");
+        // string memory root = vm.toString(m.getRoot(leafs));
 
         for (uint256 i = 0; i < truc.length; ++i) {
-            console.log(i, "index");
             // get proof gets the nodes needed for the proof & strigify (from helper lib)
-            bytes32[] memory proof = m.getProof(leafs, i);
-            console.log(bytes32ArrayToString(proof), "proof");
-            // TODO proof must be stored in the state of generator.
+            // bytes32[] memory proof = m.getProof(leafs, i);
         }
     }
 }

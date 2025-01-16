@@ -5,29 +5,27 @@ pragma solidity 0.8.28;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {MerkleTree, AirDropClaim, Proof} from "./struct/AirdropClaim.sol";
 import {DurianAirDrop} from "./DurianAirDrop.sol";
+import {DurianDurianToken} from "./DurianDurianToken.sol";
+import {console} from "forge-std/console.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {stdJson} from "forge-std/StdJson.sol";
 import {Merkle} from "murky/src/Merkle.sol";
 import {ScriptHelper} from "murky/script/common/ScriptHelper.sol";
 
 /**
- * @title MerkleTreeGenerator
- * @notice in charge of managing the creation of merkle root from accounts and addresses provided by an owner.
- * and will send these merkle roots to the airdrop for claims
+ * @title MerkleTreeBuilder
+ * @notice in charge of managing the creation of merkle roots for claims (accounts and addresses provided by a owner) store in an array.
+ * When a MerkleTree is achieved, the root, leaves and proofs are generated.
+ * Proofs are store inside, and the root passed to the airdrop
  */
-contract MerkleTreeGenerator is Ownable, ScriptHelper {
-    using stdJson for string; // enables us to use the json cheatcodes for strings
-
-    Merkle private m = new Merkle(); // instance of the merkle contract from Murky to do shi
-
+contract MerkleTreeBuilder is Ownable, ScriptHelper {
     /*//////////////////////////////////////////////////////////////
                             ERRORS
     //////////////////////////////////////////////////////////////*/
 
-    error MerkleTreeGenerator__NoDataProvided();
-    error MerkleTreeGenerator__RecipientAlreadyAdded(address recipient);
-    error MerkleTreeGenerator__AmountCantBeZero(address recipient);
-    error MerkleTreeGenerator__CantAchieveTreeWithoutClaims();
+    error MerkleTreeBuilder__NoDataProvided();
+    error MerkleTreeBuilder__RecipientAlreadyAdded(address recipient);
+    error MerkleTreeBuilder__AmountCantBeZero(address recipient);
+    error MerkleTreeBuilder__CantAchieveTreeWithoutClaims();
 
     /*//////////////////////////////////////////////////////////////
                             EVENTS
@@ -38,15 +36,15 @@ contract MerkleTreeGenerator is Ownable, ScriptHelper {
     /*//////////////////////////////////////////////////////////////
                             STATES
     //////////////////////////////////////////////////////////////*/
-    uint256 s_currentTreeCounter;
-    mapping(uint256 index => MerkleTree) s_feed;
-    IERC20 i_token;
-    DurianAirDrop i_airdrop;
+    Merkle private m = new Merkle(); // instance of the merkle contract from Murky
+    uint256 private s_currentTreeId = 0;
+    mapping(uint256 index => MerkleTree) private s_feed;
+    DurianDurianToken private i_token;
+    DurianAirDrop private i_airdrop;
 
-    constructor(IERC20 token, DurianAirDrop airdrop) Ownable(msg.sender) {
+    constructor(DurianDurianToken token, DurianAirDrop airdrop) Ownable(msg.sender) {
         i_token = token;
         i_airdrop = airdrop;
-        s_currentTreeCounter = 1;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -54,37 +52,30 @@ contract MerkleTreeGenerator is Ownable, ScriptHelper {
     //////////////////////////////////////////////////////////////*/
     function addAccountAndAddress(address recipient, uint256 amount) public onlyOwner {
         if (amount == 0) {
-            revert MerkleTreeGenerator__AmountCantBeZero(recipient);
+            revert MerkleTreeBuilder__AmountCantBeZero(recipient);
         }
         // account already added ?
-        if (isRecipentAlreadyRegistered(s_currentTreeCounter, recipient)) {
-            revert MerkleTreeGenerator__RecipientAlreadyAdded(recipient);
+        if (isRecipentAlreadyRegistered(s_currentTreeId, recipient)) {
+            revert MerkleTreeBuilder__RecipientAlreadyAdded(recipient);
         }
-        // add claim to existing MerkleTreeAirdropClaim
-        // bytes32 proofOne = 0x0fd7c981d39bece61f7499702bf59b3114a90e66b51ba2c53abdf7b62986c00a;
-        // bytes32 proofTwo = 0xe5ebd1e1b5a5478a944ecab36a9a954ac3b6b8216875f6524caa7a1d87096576;
-        // bytes32[] memory proof = [proofOne, proofTwo];
-
-        s_feed[s_currentTreeCounter].claims.push(AirDropClaim(recipient, amount));
-
-        s_feed[s_currentTreeCounter].nbOfClaims++;
-        s_feed[s_currentTreeCounter].totalAmountToSend += amount;
-        s_feed[s_currentTreeCounter].recipients[recipient] = true;
+        // add claim to existing MerkleTree and set attributes
+        s_feed[s_currentTreeId].claims.push(AirDropClaim(recipient, amount));
+        s_feed[s_currentTreeId].nbOfClaims++;
+        s_feed[s_currentTreeId].totalAmountToSend += amount;
+        s_feed[s_currentTreeId].recipients[recipient] = true;
         emit RecipientAdded(amount, recipient);
     }
 
-    function closeCurrentTreeAndSendRoot() public {
+    function finalizeTree() public {
         // has claims ?
         if (getCurrentNbOfClaims() == 0) {
-            revert MerkleTreeGenerator__CantAchieveTreeWithoutClaims();
+            revert MerkleTreeBuilder__CantAchieveTreeWithoutClaims();
         }
-        makeMerkleRoot();
-        // loop on claims and build root +
-        // s_token.transfer(address(airdrop), amountToSend);
+        handleMerkleTree();
     }
 
-    function makeMerkleRoot() internal {
-        AirDropClaim[] memory claims = s_feed[getCurrentTreeCounter()].claims;
+    function handleMerkleTree() internal {
+        AirDropClaim[] memory claims = s_feed[getCurrentTreeId()].claims;
         bytes32[] memory leafs = new bytes32[](claims.length);
         for (uint256 i = 0; i < claims.length; ++i) {
             // convert recipient and amount to bytes32
@@ -105,48 +96,49 @@ contract MerkleTreeGenerator is Ownable, ScriptHelper {
         }
 
         for (uint256 i = 0; i < claims.length; ++i) {
-            // bytes32[] storage truc = s_feed[getCurrentTreeCounter()].proofs;
-            // // each proof is associated to related claim
-            bytes32[] memory proof = m.getProof(leafs, i);
-            Proof[] storage proofs = s_feed[getCurrentTreeCounter()].proofs;
-            proofs.push(Proof(proof));
+            bytes32[] memory proofToAdd = m.getProof(leafs, i);
+            bytes32[][] storage proofs = s_feed[getCurrentTreeId()].proofs;
+            // each proof is associated to a related claim and stored
+            proofs.push(proofToAdd);
         }
-        // string memory root = vm.toString(m.getRoot(leafs));
-
-        // sent Root
+        bytes32 root = m.getRoot(leafs);
+        // lock the merkleTree before interactions
+        s_feed[getCurrentTreeId()].sendToAirdrop = true;
+        // transfer the total amount of the claims to the airdrop for future transfers
+        i_token.transferFrom(i_token.owner(), address(i_airdrop), getCurrentTotalAmount());
+        // increment id to handle next merkle tree
+        s_currentTreeId++;
+        i_airdrop.addMerkleRoot(root);
     }
-
-    // Ajouter une preuve
-    function addMerkleProof(Proof memory proofData) public {}
 
     /*//////////////////////////////////////////////////////////////
                   GETTERS RELATED TO CURRENT ID 
     //////////////////////////////////////////////////////////////*/
-    function getCurrentTreeCounter() public view returns (uint256) {
-        return s_currentTreeCounter;
+    function getCurrentTreeId() public view returns (uint256) {
+        return s_currentTreeId;
     }
 
     function isCurrentMerkleTreeSent() public view returns (bool) {
-        return isMerkleTreeSent(getCurrentTreeCounter());
+        return isMerkleTreeSent(getCurrentTreeId());
     }
 
     function getCurrentTotalAmount() public view returns (uint256) {
-        return getTotalAmountByTree(getCurrentTreeCounter());
+        return getTotalAmountByTree(getCurrentTreeId());
     }
 
     function getCurrentNbOfClaims() public view returns (uint256) {
-        return getNbOfClaimsByTree(getCurrentTreeCounter());
+        return getNbOfClaimsByTree(getCurrentTreeId());
     }
 
     function getCurrentNumberOfProofs() public view returns (uint256) {
-        return getNumberOfProofs(getCurrentTreeCounter());
+        return getNumberOfProofs(getCurrentTreeId());
     }
 
     /*//////////////////////////////////////////////////////////////
                             OTHERS GETTERS
     //////////////////////////////////////////////////////////////*/
     function isMerkleTreeSent(uint256 id) public view returns (bool) {
-        return s_feed[id].deployed;
+        return s_feed[id].sendToAirdrop;
     }
 
     function getTotalAmountByTree(uint256 id) public view returns (uint256) {
@@ -157,15 +149,19 @@ contract MerkleTreeGenerator is Ownable, ScriptHelper {
         return s_feed[id].nbOfClaims;
     }
 
-    // function getAmountAndAndRecipient(uint256 id, uint256 index) public view returns (AirDropClaim memory) {
-    //     return s_feed[id].claims[index];
-    // }
-
     function isRecipentAlreadyRegistered(uint256 id, address recipientToFind) public view returns (bool) {
         return s_feed[id].recipients[recipientToFind];
     }
 
     function getNumberOfProofs(uint256 id) public view returns (uint256) {
         return s_feed[id].proofs.length;
+    }
+
+    function getLengthOfProof(uint256 id, uint256 index) public view returns (uint256) {
+        return s_feed[id].proofs[index].length;
+    }
+
+    function getProof(uint256 id, uint256 index) public view returns (bytes32[] memory) {
+        return s_feed[id].proofs[index];
     }
 }
