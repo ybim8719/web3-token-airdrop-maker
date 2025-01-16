@@ -25,12 +25,12 @@ contract ClaimAirdrop is Script {
 
     // STEP 1: launch DeployMerkleAirdrop with anvil OPEN
     // Account 1 of anvil is allowed to claim the 25 * 10e18 ETH (because written in merkle leaf and proof and so on)
-    // Deployment of DeployMerkleAirdrop will deploy DurianDurian MerkleAirdrop contracts. Merkle root is passed to airdrop so it can ensure who is approved to claim
+    // Deployment of DeployMerkleAirdrop will deploy DurianDurianToken and MerkleAirdrop contracts. Merkle root is passed to airdrop so it can ensure who is approved to claim
     // using make deploy
 
     // STEP 2
     // CLI:  hash the message using the helper in airdrop (pass anvil account1 & amount to transfer)
-    // cast call <airdrop-contract-address-in-anvil> "getMessageHash(address,uint256)" <anvil-account-1> <authorized-amount-in-merkle-tree->25000000000000000000> --rpc-url http://localhost:8545
+    // cast call <airdrop-contract-address-in-anvil> "getMessageHash(address,uint256)" <anvil-account-1> <authorized-amount-in-merkle-tree-> --rpc-url http://localhost:8545
     // a hased message is retrieve and used below
 
     // STEP 3

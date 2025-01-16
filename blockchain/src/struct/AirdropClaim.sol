@@ -1,11 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-struct AirDropClaim {
-    address recipient;
-    uint256 amount;
-}
-
 struct FullAirDropClaim {
     address recipient;
     uint256 amount;
@@ -13,7 +8,12 @@ struct FullAirDropClaim {
 }
 
 struct Proof {
-    bytes32[2] data;
+    bytes32[] data;
+}
+
+struct AirDropClaim {
+    address recipient;
+    uint256 amount;
 }
 
 struct MerkleTree {

@@ -17,8 +17,8 @@ contract DeployApp is Script {
         DurianDurianToken token = new DurianDurianToken(); // msg sender (YOU) will become owner of the token
         DurianAirDrop airdrop = new DurianAirDrop(IERC20(token));
         MerkleTreeGenerator generator = new MerkleTreeGenerator(IERC20(token), airdrop);
-        // token.mint(token.owner(), INITIAL_AMOUNT_TO_MINT); // amount for four claimers / transfer from adress 0 to YOU
 
+        // token.mint(token.owner(), INITIAL_AMOUNT_TO_MINT); // amount for four claimers / transfer from adress 0 to YOU
         // delegate approval to generator.
         // token.approve()
         // IERC20(token).transfer(address(airdrop), AMOUNT_TO_TRANSFER); // transfer tokens to the airdrop contract (from YOU to airdrop)

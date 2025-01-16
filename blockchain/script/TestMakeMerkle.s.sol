@@ -8,6 +8,9 @@ import {Merkle} from "murky/src/Merkle.sol";
 import {ScriptHelper} from "murky/script/common/ScriptHelper.sol";
 import {AirDropClaim} from "../src/struct/AirdropClaim.sol";
 
+/**
+ * @notice Created for tests purpose: creation of merkle root, leaves and proofs from hardcoded sets of address + amount.
+ */
 contract TestMakeMerkle is Script, ScriptHelper {
     using stdJson for string; // enables us to use the json cheatcodes for strings
 
@@ -41,7 +44,6 @@ contract TestMakeMerkle is Script, ScriptHelper {
 
         for (uint256 i = 0; i < truc.length; ++i) {
             bytes32[] memory data = new bytes32[](2); // actual data as a bytes32
-
             address recipient = truc[i].recipient;
             console.log(recipient, "recipient");
             data[0] = bytes32(uint256(uint160(recipient)));
@@ -68,13 +70,11 @@ contract TestMakeMerkle is Script, ScriptHelper {
         console.log(root, "root");
 
         for (uint256 i = 0; i < truc.length; ++i) {
-            console.log(i);
+            console.log(i, "index");
             // get proof gets the nodes needed for the proof & strigify (from helper lib)
             bytes32[] memory proof = m.getProof(leafs, i);
-            console.log(bytes32ArrayToString(proof));
+            console.log(bytes32ArrayToString(proof), "proof");
             // TODO proof must be stored in the state of generator.
         }
-
-        console.log("DONE: The output is found at %s");
     }
 }

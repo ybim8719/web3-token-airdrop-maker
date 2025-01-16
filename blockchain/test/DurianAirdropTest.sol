@@ -49,6 +49,14 @@ contract MerkleAirdropTest is Test, ZkSyncChainChecker {
         vm.stopPrank();
     }
 
+    modifier treeReadyForDeployment() {
+        vm.startPrank(msg.sender);
+        s_generator.addAccountAndAddress(ACCOUNT1, AMOUNT1);
+        s_generator.addAccountAndAddress(ACCOUNT2, AMOUNT2);
+        vm.stopPrank();
+        _;
+    }
+
     function testAddSeveralClaims() public {
         vm.assertEq(s_generator.getNbOfClaimsByTree(s_generator.getCurrentTreeCounter()), 0);
         vm.startPrank(msg.sender);
@@ -79,6 +87,14 @@ contract MerkleAirdropTest is Test, ZkSyncChainChecker {
         vm.expectRevert();
         s_generator.addAccountAndAddress(ACCOUNT1, 0);
         vm.stopPrank();
+    }
+
+    function testEndTree() public treeReadyForDeployment {
+        vm.startPrank(msg.sender);
+        s_generator.closeCurrentTreeAndSendRoot();
+        vm.stopPrank();
+        console.log(s_generator.getNumberOfProofs(1));
+        console.log(s_generator.getNbOfClaimsByTree(1));
     }
 
     // vm.prank(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266);

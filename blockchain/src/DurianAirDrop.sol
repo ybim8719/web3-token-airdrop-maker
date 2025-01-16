@@ -37,10 +37,12 @@ contract DurianAirDrop is EIP712 {
     /*//////////////////////////////////////////////////////////////
                             FUNCTIONS STATES
     //////////////////////////////////////////////////////////////*/
-    function addMerkleTree(bytes32 merkleRoot) public {}
+    function addMerkleTree(bytes32 merkleRoot) public {
+        s_merkleRoots.push(merkleRoot);
+    }
 
     function claim(
-        uint256 id,
+        uint256 index,
         address account,
         uint256 amount,
         bytes32[] calldata merkleProof,
@@ -75,14 +77,21 @@ contract DurianAirDrop is EIP712 {
     /*//////////////////////////////////////////////////////////////
                             GETTERS
     //////////////////////////////////////////////////////////////*/
-    function getMerkleRoot() public view returns (bytes32) {
-        // return i_merkleRoot;
+    function getMerkleRoot(uint256 i) public view returns (bytes32) {
+        return s_merkleRoots[i];
+    }
+
+    function getMerkleRootsLength() public view returns (uint256) {
+        return s_merkleRoots.length;
     }
 
     function getAirdropToken() public view returns (IERC20) {
         return i_airdropToken;
     }
 
+    /*//////////////////////////////////////////////////////////////
+                            UTILS
+    //////////////////////////////////////////////////////////////*/
     function _isValidSignature(address signer, bytes32 digest, uint8 v, bytes32 r, bytes32 s)
         internal
         pure
