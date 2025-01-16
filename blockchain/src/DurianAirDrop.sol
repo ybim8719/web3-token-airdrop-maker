@@ -5,11 +5,13 @@ import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeE
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {FullAirDropClaim} from "../src/struct/AirdropClaim.sol";
 
 contract DurianAirDrop is EIP712 {
     using SafeERC20 for IERC20;
 
-    bytes32 private constant MESSAGE_TYPEHASH = keccak256("AirdropClaim(address account,uint256 amount)");
+    bytes32 private constant MESSAGE_TYPEHASH =
+        keccak256("FullAirDropClaim(uint256 index,address recipient,uint256 amount)");
 
     /*//////////////////////////////////////////////////////////////
                             ERRORS
@@ -70,8 +72,12 @@ contract DurianAirDrop is EIP712 {
     /*//////////////////////////////////////////////////////////////
                            HELPER
     //////////////////////////////////////////////////////////////*/
-    function getMessageHash(address account, uint256 amount) public view returns (bytes32) {
-        // return _hashTypedDataV4(keccak256(abi.encode(MESSAGE_TYPEHASH, AirdropClaim({account: account, amount: amount}))));
+    function getMessageHash(uint256 index, address account, uint256 amount) public view returns (bytes32) {
+        return _hashTypedDataV4(
+            keccak256(
+                abi.encode(MESSAGE_TYPEHASH, FullAirDropClaim({index: index, recipient: account, amount: amount}))
+            )
+        );
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -2,9 +2,9 @@
 pragma solidity 0.8.28;
 
 struct FullAirDropClaim {
+    uint256 index;
     address recipient;
     uint256 amount;
-    bytes32[] proof;
 }
 
 struct Proof {
