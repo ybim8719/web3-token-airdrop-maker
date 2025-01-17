@@ -6,7 +6,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {MerkleTree, AirDropClaim, Proof} from "./struct/AirdropClaim.sol";
 import {DurianAirDrop} from "./DurianAirDrop.sol";
 import {DurianDurianToken} from "./DurianDurianToken.sol";
-import {console} from "forge-std/console.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Merkle} from "murky/src/Merkle.sol";
 import {ScriptHelper} from "murky/script/common/ScriptHelper.sol";
@@ -21,11 +20,10 @@ contract MerkleTreeBuilder is Ownable, ScriptHelper {
     /*//////////////////////////////////////////////////////////////
                             ERRORS
     //////////////////////////////////////////////////////////////*/
-
     error MerkleTreeBuilder__NoDataProvided();
     error MerkleTreeBuilder__RecipientAlreadyAdded(address recipient);
     error MerkleTreeBuilder__AmountCantBeZero(address recipient);
-    error MerkleTreeBuilder__CantAchieveTreeWithoutClaims();
+    error MerkleTreeBuilder__CantFinalizeTreeWithoutClaims();
 
     /*//////////////////////////////////////////////////////////////
                             EVENTS
@@ -66,26 +64,26 @@ contract MerkleTreeBuilder is Ownable, ScriptHelper {
         emit RecipientAdded(amount, recipient);
     }
 
-    function finalizeTree() public {
+    function finalizeTree() public onlyOwner {
         // has claims ?
         if (getCurrentNbOfClaims() == 0) {
-            revert MerkleTreeBuilder__CantAchieveTreeWithoutClaims();
+            revert MerkleTreeBuilder__CantFinalizeTreeWithoutClaims();
         }
         handleMerkleTree();
     }
 
     function handleMerkleTree() internal {
-        AirDropClaim[] memory claims = s_feed[getCurrentTreeId()].claims;
+        uint256 idBeingProcessed = getCurrentTreeId();
+        AirDropClaim[] memory claims = s_feed[idBeingProcessed].claims;
         bytes32[] memory leafs = new bytes32[](claims.length);
         for (uint256 i = 0; i < claims.length; ++i) {
             // convert recipient and amount to bytes32
             bytes32[] memory data = new bytes32[](2);
             address recipient = claims[i].recipient;
-            // cannot push on array of bytes32
+            // cannot push on fixed array
             data[0] = bytes32(uint256(uint160(recipient)));
             uint256 amount = claims[i].amount;
             data[1] = bytes32(amount);
-
             // abi encode the data array (each element is a bytes32 representation for the address and the amount)
             // ltrim64 Returns the bytes with the first 64 bytes removed
             // ltrim64 removes the offset and length from the encoded bytes. There is an offset because the array is declared in memory
@@ -97,18 +95,19 @@ contract MerkleTreeBuilder is Ownable, ScriptHelper {
 
         for (uint256 i = 0; i < claims.length; ++i) {
             bytes32[] memory proofToAdd = m.getProof(leafs, i);
-            bytes32[][] storage proofs = s_feed[getCurrentTreeId()].proofs;
+            // console.log(bytes32ArrayToString(proofToAdd), "proof is ");
+            bytes32[][] storage proofs = s_feed[idBeingProcessed].proofs;
             // each proof is associated to a related claim and stored
             proofs.push(proofToAdd);
         }
         bytes32 root = m.getRoot(leafs);
         // lock the merkleTree before interactions
-        s_feed[getCurrentTreeId()].sendToAirdrop = true;
+        s_feed[idBeingProcessed].sendToAirdrop = true;
         // transfer the total amount of the claims to the airdrop for future transfers
         i_token.transferFrom(i_token.owner(), address(i_airdrop), getCurrentTotalAmount());
         // increment id to handle next merkle tree
         s_currentTreeId++;
-        i_airdrop.addMerkleRoot(root);
+        i_airdrop.addMerkleRoot(idBeingProcessed, root);
     }
 
     /*//////////////////////////////////////////////////////////////

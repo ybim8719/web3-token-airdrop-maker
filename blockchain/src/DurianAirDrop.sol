@@ -6,6 +6,7 @@ import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProo
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {FullAirDropClaim} from "../src/struct/AirdropClaim.sol";
+import {console} from "forge-std/Script.sol";
 
 contract DurianAirDrop is EIP712 {
     using SafeERC20 for IERC20;
@@ -16,21 +17,23 @@ contract DurianAirDrop is EIP712 {
     /*//////////////////////////////////////////////////////////////
                             ERRORS
     //////////////////////////////////////////////////////////////*/
-    error MerkleAirdrop__InvalidProof();
-    error MerkleAirdrop__AlreadyClaimed();
-    error MerkleAirdrop__InvalidSignature();
+    error DurianAirdrop__InvalidProof();
+    error DurianAirdrop__AlreadyClaimed();
+    error DurianAirdrop__InvalidSignature();
+    error DurianAirdrop__InvalidSignatureLength();
 
     /*//////////////////////////////////////////////////////////////
                             EVENT
     //////////////////////////////////////////////////////////////*/
-    event Claimed(address indexed account, uint256 indexed amount);
+    event Claimed(uint256 id, address indexed account, uint256 indexed amount);
 
     /*//////////////////////////////////////////////////////////////
                             STATES
     //////////////////////////////////////////////////////////////*/
     IERC20 private immutable i_airdropToken;
-    bytes32[] private s_merkleRoots;
-    mapping(address claimer => bool hasClaimed)[] private s_hasClaimedByRoot;
+    mapping(uint256 rootId => bytes32 root) private s_merkleRoots;
+    mapping(uint256 rootId => mapping(address claimer => bool hasClaimed)) private s_hasClaimed;
+    uint256 private s_nbOfMerkleRoots = 0;
 
     constructor(IERC20 airdropToken) EIP712("Airdrop", "1") {
         i_airdropToken = airdropToken;
@@ -39,45 +42,57 @@ contract DurianAirDrop is EIP712 {
     /*//////////////////////////////////////////////////////////////
                             FUNCTIONS STATES
     //////////////////////////////////////////////////////////////*/
-    function addMerkleRoot(bytes32 merkleRoot) public {
-        s_merkleRoots.push(merkleRoot);
+    function addMerkleRoot(uint256 rootId, bytes32 merkleRoot) public {
+        s_merkleRoots[rootId] = merkleRoot;
+        s_nbOfMerkleRoots++;
     }
 
-    function claim(
-        uint256 index,
+    function claimWithSignature(
+        uint256 id,
+        address account,
+        uint256 amount,
+        bytes memory sig,
+        bytes32[] calldata merkleProof
+    ) external {
+        (uint8 v, bytes32 r, bytes32 s) = splitSignature(sig);
+        claimWithVrs(id, account, amount, merkleProof, v, r, s);
+    }
+
+    function splitSignature(bytes memory sig) public pure returns (uint8 v, bytes32 r, bytes32 s) {
+        if (sig.length != 65) {
+            revert DurianAirdrop__InvalidSignatureLength();
+        }
+        assembly {
+            r := mload(add(sig, 32))
+            s := mload(add(sig, 64))
+            v := byte(0, mload(add(sig, 96)))
+        }
+    }
+
+    function claimWithVrs(
+        uint256 id,
         address account,
         uint256 amount,
         bytes32[] calldata merkleProof,
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external {
-        // if (s_hasClaimed[account]) {
-        //     revert MerkleAirdrop__AlreadyClaimed();
-        // }
+    ) public {
+        if (s_hasClaimed[id][account]) {
+            revert DurianAirdrop__AlreadyClaimed();
+        }
         // // check if account is really the signer of the message
-        // if (!_isValidSignature(account, getMessageHash(account, amount), v, r, s)) {
-        //     revert MerkleAirdrop__InvalidSignature();
-        // }
+        if (!_isValidSignature(account, getMessageHash(id, account, amount), v, r, s)) {
+            revert DurianAirdrop__InvalidSignature();
+        }
 
-        // bytes32 leaf = keccak256(bytes.concat(keccak256(abi.encode(account, amount))));
-        // if (!MerkleProof.verify(merkleProof, i_merkleRoot, leaf)) {
-        //     revert MerkleAirdrop__InvalidProof();
-        // }
-        // s_hasClaimed[account] = true;
-        // emit Claimed(account, amount);
-        // i_airdropToken.safeTransfer(account, amount);
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                           HELPER
-    //////////////////////////////////////////////////////////////*/
-    function getMessageHash(uint256 index, address account, uint256 amount) public view returns (bytes32) {
-        return _hashTypedDataV4(
-            keccak256(
-                abi.encode(MESSAGE_TYPEHASH, FullAirDropClaim({index: index, recipient: account, amount: amount}))
-            )
-        );
+        bytes32 leaf = keccak256(bytes.concat(keccak256(abi.encode(account, amount))));
+        if (!MerkleProof.verify(merkleProof, s_merkleRoots[id], leaf)) {
+            revert DurianAirdrop__InvalidProof();
+        }
+        s_hasClaimed[id][account] = true;
+        emit Claimed(id, account, amount);
+        i_airdropToken.safeTransfer(account, amount);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -87,13 +102,25 @@ contract DurianAirDrop is EIP712 {
         return s_merkleRoots[i];
     }
 
-    function getMerkleRootsLength() public view returns (uint256) {
-        return s_merkleRoots.length;
+    function getNfOfMerkleRoots() public view returns (uint256) {
+        return s_nbOfMerkleRoots;
+    }
+
+    function hasClaimed(uint256 id, address account) public view returns (bool) {
+        return s_hasClaimed[id][account];
     }
 
     /*//////////////////////////////////////////////////////////////
-                            UTILS
+                            TOOLS
     //////////////////////////////////////////////////////////////*/
+    function getMessageHash(uint256 index, address account, uint256 amount) public view returns (bytes32) {
+        return _hashTypedDataV4(
+            keccak256(
+                abi.encode(MESSAGE_TYPEHASH, FullAirDropClaim({index: index, recipient: account, amount: amount}))
+            )
+        );
+    }
+
     function _isValidSignature(address signer, bytes32 digest, uint8 v, bytes32 r, bytes32 s)
         internal
         pure

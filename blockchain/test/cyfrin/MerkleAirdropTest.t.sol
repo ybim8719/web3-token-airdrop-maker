@@ -2,10 +2,10 @@
 pragma solidity 0.8.28;
 
 import {Test, console} from "forge-std/Test.sol";
-import {MerkleAirdrop} from "../../src/old/MerkleAirDrop.sol";
+import {MerkleAirdrop} from "../../src/cyfrin/MerkleAirDrop.sol";
 import {DurianDurianToken} from "../../src/DurianDurianToken.sol";
 import {ZkSyncChainChecker} from "foundry-devops/src/ZkSyncChainChecker.sol";
-import {DeployMerkleAirdrop} from "../../script/old/DeployMerkleAirdrop.s.sol";
+import {DeployMerkleAirdrop} from "../../script/cyfrin/DeployMerkleAirdrop.s.sol";
 
 contract MerkleAirdropTest is Test, ZkSyncChainChecker {
     DurianDurianToken public token;
