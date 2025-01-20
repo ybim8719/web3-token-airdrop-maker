@@ -29,6 +29,7 @@ contract MerkleAirdropTest is Test, ZkSyncChainChecker, ScriptHelper {
     address public constant ACCOUNT3 = 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC;
     address public constant ACCOUNT4 = 0x90F79bf6EB2c4f870365E785982E1f101E93b906;
     uint256 public constant ACCOUNT1_PRIVATE_KEY = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
+    uint256 public constant ACCOUNT2_PRIVATE_KEY = 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d;
     uint256 public constant AMOUNT1 = 100 * 1e18;
     uint256 public constant AMOUNT2 = 300 * 1e18;
     uint256 public constant AMOUNT3 = 500 * 1e18;
@@ -199,6 +200,16 @@ contract MerkleAirdropTest is Test, ZkSyncChainChecker, ScriptHelper {
         bytes32[] memory p = s_treeBuilder.getProof(finalizedTreeId, PROOF2_INDEX);
         vm.prank(ACCOUNT1);
         vm.expectRevert(DurianAirDrop.DurianAirdrop__InvalidProof.selector);
+        s_airdrop.claimWithVrs(finalizedTreeId, ACCOUNT1, AMOUNT1, p, v, r, s);
+    }
+
+    function testClaimFailsWithInvalidSig() public merkleTreeFinalized {
+        bytes32 digest = s_airdrop.getMessageHash(finalizedTreeId, ACCOUNT1, AMOUNT1);
+        // signing with account2 privKey instead of 1
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ACCOUNT2_PRIVATE_KEY, digest);
+        bytes32[] memory p = s_treeBuilder.getProof(finalizedTreeId, PROOF1_INDEX);
+        vm.prank(ACCOUNT1);
+        vm.expectRevert(DurianAirDrop.DurianAirdrop__InvalidSignature.selector);
         s_airdrop.claimWithVrs(finalizedTreeId, ACCOUNT1, AMOUNT1, p, v, r, s);
     }
 }

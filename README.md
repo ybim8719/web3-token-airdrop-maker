@@ -26,8 +26,37 @@ forge test
 
 ## More about the general behaviour of the app
 
+DurianDurianToken is the reference with the classical functions of a ERC20 token. Owner of the Token is also the owner of tne MerkleTreeBuilder, its purpose is to create a set of couple Recipient/Amount of token (also callec Claim) to be gathered in a MerkleTree. 
+
+When all Claims are set, the merkle root is generated, MerkleRoot and an id is passed to the Airdrop, and proofs are store for each Claim.
+
+Then any legit recipient can sign the hashed message and claim its amount by calling the Airdrop contract with required params (sig and claim info).
+
+If all works fine, balance of the recipient will be increased with the correct amount. 
 
 ## Deployment Script 
+
+### WIP 
+
+Use script to deploy the 3 contracts. 
+
+1) Mint enougth token to process
+
+2) trasnfer them to owner
+
+3) give approval for TreeBuilder contract
+
+4) add claims to tree builder
+
+5) Achieved merkle Tree
+
+6) create sig with cast 
+
+7) claim airdrop 
+
+8) verify balance of recipient
+
+
 
 ## Deployment Script on Sepolia (testnet)
 

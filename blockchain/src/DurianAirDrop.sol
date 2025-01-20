@@ -47,6 +47,8 @@ contract DurianAirDrop is EIP712 {
         s_nbOfMerkleRoots++;
     }
 
+    // sig can be generated wiyh cast : cast wallet sign --no-hash <hashed-message> --private-key <private-key>
+    // however how it be done programmatically with vm ? (for test purposes)
     function claimWithSignature(
         uint256 id,
         address account,
@@ -55,7 +57,7 @@ contract DurianAirDrop is EIP712 {
         bytes32[] calldata merkleProof
     ) external {
         (uint8 v, bytes32 r, bytes32 s) = splitSignature(sig);
-        claimWithVrs(id, account, amount, merkleProof, v, r, s);
+        checkAndHandleTransfer(id, account, amount, merkleProof, v, r, s);
     }
 
     function splitSignature(bytes memory sig) public pure returns (uint8 v, bytes32 r, bytes32 s) {
@@ -77,7 +79,19 @@ contract DurianAirDrop is EIP712 {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) public {
+    ) external {
+        checkAndHandleTransfer(id, account, amount, merkleProof, v, r, s);
+    }
+
+    function checkAndHandleTransfer(
+        uint256 id,
+        address account,
+        uint256 amount,
+        bytes32[] calldata merkleProof,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) internal {
         if (s_hasClaimed[id][account]) {
             revert DurianAirdrop__AlreadyClaimed();
         }
