@@ -13,7 +13,7 @@ import {ScriptHelper} from "murky/script/common/ScriptHelper.sol";
 /**
  * @title MerkleTreeBuilder
  * @notice in charge of managing the creation of merkle roots for claims (accounts and addresses provided by a owner) store in an array.
- * When a MerkleTree is achieved, the root, leaves and proofs are generated.
+ * When a MerkleTree is finalized, the root, leaves and proofs are generated.
  * Proofs are store inside, and the root passed to the airdrop
  */
 contract MerkleTreeBuilder is Ownable, ScriptHelper {

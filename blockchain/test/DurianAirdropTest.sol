@@ -146,7 +146,7 @@ contract MerkleAirdropTest is Test, ZkSyncChainChecker, ScriptHelper {
         assertEq(s_airdrop.getMessageHash(0, ACCOUNT1, AMOUNT1), HASHED_MESSAGE1);
     }
     /*//////////////////////////////////////////////////////////////
-                        AIRDROP -> claim with Sig
+                        AIRDROP -> claim with Sig // could find a cheatcode to general signatures
     //////////////////////////////////////////////////////////////*/
 
     /*//////////////////////////////////////////////////////////////

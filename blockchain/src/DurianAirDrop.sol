@@ -48,7 +48,7 @@ contract DurianAirDrop is EIP712 {
     }
 
     // sig can be generated wiyh cast : cast wallet sign --no-hash <hashed-message> --private-key <private-key>
-    // however how it be done programmatically with vm ? (for test purposes)
+    // however couldn't find out it how it be done programmatically with vm (for test purposes)
     function claimWithSignature(
         uint256 id,
         address account,
