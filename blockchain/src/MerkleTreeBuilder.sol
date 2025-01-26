@@ -64,7 +64,7 @@ contract MerkleTreeBuilder is Ownable, ScriptHelper {
         emit RecipientAdded(amount, recipient);
     }
 
-    function finalizeTree() public onlyOwner {
+    function finalizeCurrentTree() public onlyOwner {
         // has claims ?
         if (getCurrentNbOfClaims() == 0) {
             revert MerkleTreeBuilder__CantFinalizeTreeWithoutClaims();
@@ -129,6 +129,14 @@ contract MerkleTreeBuilder is Ownable, ScriptHelper {
         return getNbOfClaimsByTree(getCurrentTreeId());
     }
 
+    function getClaimAmountFromCurrentTree(uint256 claimIndex) public view returns (uint256) {
+        return getClaimAmount(getCurrentTreeId(), claimIndex);
+    }
+
+    function getClaimRecipientFromCurrentTree(uint256 claimIndex) public view returns (address) {
+        return getClaimRecipient(getCurrentTreeId(), claimIndex);
+    }
+
     function getCurrentNumberOfProofs() public view returns (uint256) {
         return getNumberOfProofs(getCurrentTreeId());
     }
@@ -162,5 +170,17 @@ contract MerkleTreeBuilder is Ownable, ScriptHelper {
 
     function getProof(uint256 id, uint256 index) public view returns (bytes32[] memory) {
         return s_feed[id].proofs[index];
+    }
+
+    function getProofElement(uint256 id, uint256 index, uint256 elementIndex) public view returns (bytes32) {
+        return s_feed[id].proofs[index][elementIndex];
+    }
+
+    function getClaimAmount(uint256 id, uint256 claimIndex) public view returns (uint256) {
+        return s_feed[id].claims[claimIndex].amount;
+    }
+
+    function getClaimRecipient(uint256 id, uint256 claimIndex) public view returns (address) {
+        return s_feed[id].claims[claimIndex].recipient;
     }
 }

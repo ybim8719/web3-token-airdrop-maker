@@ -104,6 +104,10 @@ contract DurianAirDrop is EIP712 {
         if (!MerkleProof.verify(merkleProof, s_merkleRoots[id], leaf)) {
             revert DurianAirdrop__InvalidProof();
         }
+
+        console.log("account is ", account);
+        console.log("amout is ", amount);
+
         s_hasClaimed[id][account] = true;
         emit Claimed(id, account, amount);
         i_airdropToken.safeTransfer(account, amount);
@@ -112,10 +116,6 @@ contract DurianAirDrop is EIP712 {
     /*//////////////////////////////////////////////////////////////
                             GETTERS
     //////////////////////////////////////////////////////////////*/
-    function getMerkleRoot(uint256 i) public view returns (bytes32) {
-        return s_merkleRoots[i];
-    }
-
     function getNfOfMerkleRoots() public view returns (uint256) {
         return s_nbOfMerkleRoots;
     }

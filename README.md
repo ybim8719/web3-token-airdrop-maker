@@ -32,7 +32,7 @@ source .env
 ```
 
 ```bash
-forge test --fork-url $SEPOLIA_RPC_URL 
+forge test --forked-url $SEPOLIA_RPC_URL 
 ```
 
 ## More about the general behaviour of the app
@@ -73,10 +73,10 @@ cast send <PASTE-ADDRESS-OF-TOKEN-CONTRACT> "mint(address account, uint256 amoun
 ```bash
 cast call <PASTE-ADDRESS-OF-TOKEN-CONTRACT> "balanceOf(address account)" 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 
 ```
+returned result will be in hexadecimal, but to convert to decimal base, check the command in the end of the readme.  
 
-must be : 100000000000000000000000
+It should return : 100000000000000000000000
 
-(TODO )
 
 5. account1 gives approval on its behalf to TreeBuilder address to handle transferts 
 
@@ -88,33 +88,32 @@ cast send <PASTE-ADDRESS-OF-TOKEN-CONTRACT> "approve(address spender, uint256 va
 6. account1 add claims for account2, 3 and 4 to merkleTreeBuilder
 
 ```bash
-cast send <PASTE-THE-ADDRESS-OF-MERKLE-GENERATOR> "addAccountAndAddress(address recipient, uint256 amount)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 2000000000000000000000 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+cast send <PASTE-THE-ADDRESS-OF-MERKLE-BUILDER> "addAccountAndAddress(address recipient, uint256 amount)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 2000000000000000000000 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 
-cast send <PASTE-THE-ADDRESS-OF-MERKLE-GENERATOR> "addAccountAndAddress(address recipient, uint256 amount)" 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC 3000000000000000000000 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+cast send <PASTE-THE-ADDRESS-OF-MERKLE-BUILDER> "addAccountAndAddress(address recipient, uint256 amount)" 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC 3000000000000000000000 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 
-cast send <PASTE-THE-ADDRESS-OF-MERKLE-GENERATOR> "addAccountAndAddress(address recipient, uint256 amount)" 0x90F79bf6EB2c4f870365E785982E1f101E93b906 4000000000000000000000 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+cast send <PASTE-THE-ADDRESS-OF-MERKLE-BUILDER> "addAccountAndAddress(address recipient, uint256 amount)" 0x90F79bf6EB2c4f870365E785982E1f101E93b906 4000000000000000000000 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 ```
 
 7. do verifications : 
 
 ```bash
-cast call <PASTE-THE-ADDRESS-OF-TOKEN-CONTRACT> "getCurrentTotalAmount()" 
+cast call <PASTE-THE-ADDRESS-OF-MERKLE-BUILDER> "getCurrentTotalAmount()" 
 ```
 
-=> must return : 900000000000000000000
+=> must return : 9000000000000000000000
 
 ```bash
-cast call <PASTE-ADDRESS-OF-TOKEN-CONTRACT> "getCurrentNbOfClaims()" 
+cast call <PASTE-ADDRESS-OF-MERKLE-BUILDER> "getCurrentNbOfClaims()" 
 ```
 
 => must return : 3
 
 
-
 8. Finalize current merkle Tree
 
 ```bash
-cast send <PASTE-ADDRESS-OF-MERKLE-BUILDER> "finalizeTree()"  --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+cast send <PASTE-ADDRESS-OF-MERKLE-BUILDER> "finalizeCurrentTree()"  --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 ```
 
 => merkle root was generated and sent to the Airdrop. 
@@ -132,16 +131,18 @@ cast call <PASTE-ADDRESS-OF-AIRDROP> "getMessageHash(uint256 index, address acco
 cast wallet sign --no-hash <digest> --private-key 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
 ```
 
-11. Retrieve the associated proof (is index 0 since its claimed was created first)
+11. Retrieve the components of the associated proof (which is bytes32[](2)) (index is 0 since this claimed was created before others)
 
 ```bash
-cast call <PASTE-ADDRESS-OF-MERKLE-BUILDER> "getProof(uint256 id, uint256 index)" 0 0 
+cast call <PASTE-ADDRESS-OF-MERKLE-BUILDER> "getProofElement(uint256 id, uint256 index, uint256 elementIndex)" 0 0 0
+
+cast call <PASTE-ADDRESS-OF-MERKLE-BUILDER> "getProofElement(uint256 id, uint256 index, uint256 elementIndex)" 0 0 1
 ```
 
 12. verify balance of account2 before claim
 
 ```bash
-cast call <PASTE-ADDRESS-OF-TOKEN-CONTRACT> "balanceOf(address account)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+cast call <token-address> "balanceOf(address account)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
 ```
 
 => must return 0
@@ -149,21 +150,27 @@ cast call <PASTE-ADDRESS-OF-TOKEN-CONTRACT> "balanceOf(address account)" 0x70997
 
 13. Finally account2 claims its due amount by sending signature + address + amount to claim + proof : 
 
-TODO....
+ISSUE : 
 
-
-
+Couldn't claim claim function with cast. the following command fails. 
 
 ```bash
-cast send <PASTE-ADDRESS-OF-AIRDROP-CONTRACT> "claimWithSignature(uint256 id,address account,uint256 amount,bytes memory sig,bytes32[] calldata merkleProof)" 0 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 2000000000000000000000 <paste-signed-message> <paste-merkle-proof> --private-key 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
+cast send <airdrop-address> "claimWithSignature(uint256 id,address account,uint256 amount,bytes memory sig,bytes32[] calldata merkleProof)" 0 <account2-address> 2000000000000000000000 <paste-signed-message> <paste-merkle-proof> --private-key 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
 ```
+Then hardcoded values (proof and signature) were added to the script Interactions.s.sol. trigger this command to claim for account2
+
+```bash
+forge script script/Interactions.s.sol:ClaimAirdropForAccount2 --rpc-url http://localhost:8545 --private-key 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d --broadcast
+``` 
 
 14. verify balance of account2 after claim
 
+```bash
+cast call <token-address> "balanceOf(address account)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+```
+=> should return : 2000000000000000000000
 
-BONUS : can claimed (and pay the feed on behalf of someone else if owns the signed message)
-
-15.
+Please note that accoun2 private key where used in the Interactions.s.sol script, but any private keys of other accounts could also be used to claim money on behalf of account2 
 
 
 ## Deployment Script on Sepolia (testnet)
@@ -176,35 +183,3 @@ BONUS : can claimed (and pay the feed on behalf of someone else if owns the sign
 ```bash 
 cast --to-base <uint-to-convert> dec
 ```
-
-### Decode strings with cast abi-decode :
-
-```bash
-cast abi-decode "<function-signature> (<return-type>)" <returned-encoded-value>
-```
-
-Example : 
-
-```
-cast call <PASTE-THE-ADDRESS-OF-CONTRACT> "getName(uint256 i)" 0
-```
-
-returns :
-
-```
-0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000064a65616e4d690000000000000000000000000000000000000000000000000000
-```
-
-decode with :
-
-```
-cast abi-decode "getName(uint256 i)(string memory)" 0x0000000000000000000000000000000000000000000000000000
-00000000002000000000000000000000000000000000000000000000000000000000000000064a65616e4d690000000000000000000000000000000000000000000000000000
-```
-
-result (as string):
-
-```
-"JeanMi"
-```
-
