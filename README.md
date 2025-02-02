@@ -150,7 +150,7 @@ cast call <token-address> "balanceOf(address account)" 0x70997970C51812dc3A010C7
 
 13. Finally account2 claims its due amount by sending signature + address + amount to claim + proof : 
 
-ISSUE : 
+**ISSUE :** 
 
 Couldn't claim claim function with cast. the following command fails. 
 
